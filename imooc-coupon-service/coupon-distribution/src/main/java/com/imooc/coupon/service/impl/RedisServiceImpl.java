@@ -97,8 +97,10 @@ public class RedisServiceImpl implements IRedisService {
                 result = addCouponToCacheForUsable(userId, coupons);
                 break;
             case USED:
+                result = addCouponToCacheForUsed(userId, coupons);
                 break;
             case EXPIRED:
+                result = addCouponToCacheForExpire(userId, coupons);
                 break;
         }
 
@@ -209,7 +211,7 @@ public class RedisServiceImpl implements IRedisService {
         SessionCallback<Objects> sessionCallback = new SessionCallback<Objects>() {
             @Override
             public Objects execute(RedisOperations redisOperations) throws DataAccessException {
-                // 1. 已使用的优惠券 cache 缓存
+                // 1. 已过期的优惠券 cache 缓存
                 redisOperations.opsForHash().putAll(redisKeyForExpire, needCacheForExpire);
                 // 2. 可用的优惠券cache需要清理
                 redisOperations.opsForHash().delete(redisKeyForUsable, needCleanKey);
