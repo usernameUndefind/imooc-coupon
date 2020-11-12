@@ -171,10 +171,57 @@ public class RedisServiceImpl implements IRedisService {
      * @return
      * @throws CouponException
      */
+    @SuppressWarnings("all")
     private Integer addCouponToCacheForExpire(Long userId, List<Coupon> coupons) throws CouponException {
 
         // status 是Expired， 代表是已过期了
-        return null;
+        // USABLE, EXPIRED
+            log.debug("Add Coupon To Cache For Expired.");
+
+        // 最终需要保存的Cache
+        Map<String, String> needCacheForExpire = new HashMap<>();
+        String redisKeyForUsable = status2RedisKey(CouponStatus.USABLE.getCode(),
+                userId);
+        String redisKeyForExpire = status2RedisKey(CouponStatus.EXPIRED.getCode(), userId);
+
+        List<Coupon> curUsableCoupons = getCachedCoupons(userId, CouponStatus.USABLE.getCode());
+        List<Coupon> curExpiredCoupons = getCachedCoupons(userId, CouponStatus.EXPIRED.getCode());
+
+
+        // 当前可用的优惠券可数一定是大于1的
+        assert curUsableCoupons.size() > coupons.size();
+
+        coupons.forEach(e -> needCacheForExpire.put(e.getId().toString(), JSON.toJSONString(e)));
+        // 校验当前的优惠券参数是否与cache中匹配
+        List<Integer> curUsableIds = curUsableCoupons.stream().map(Coupon::getId)
+                .collect(Collectors.toList());
+        List<Integer> paramIds = coupons.stream().map(Coupon::getId).collect(Collectors.toList());
+
+        if (CollectionUtils.isSubCollection(paramIds, curUsableIds)) {
+            log.error("CurCoupons Is Not Equal To Cache: {}, {}, {}",
+                    userId, JSON.toJSONString(curUsableIds),
+                     JSON.toJSONString(paramIds));
+            throw new CouponException("CurCoupons Is Not Equal To Cache.");
+        }
+
+        List<String> needCleanKey = paramIds.stream()
+                .map(i -> i.toString()).collect(Collectors.toList());
+        SessionCallback<Objects> sessionCallback = new SessionCallback<Objects>() {
+            @Override
+            public Objects execute(RedisOperations redisOperations) throws DataAccessException {
+                // 1. 已使用的优惠券 cache 缓存
+                redisOperations.opsForHash().putAll(redisKeyForExpire, needCacheForExpire);
+                // 2. 可用的优惠券cache需要清理
+                redisOperations.opsForHash().delete(redisKeyForUsable, needCleanKey);
+                // 3. 重置过期时间
+                redisOperations.expire(redisKeyForUsable, getRandomExpirationTime(1,2), TimeUnit.SECONDS);
+                redisOperations.expire(redisKeyForExpire, getRandomExpirationTime(1,2), TimeUnit.SECONDS);
+                return null;
+            }
+        };
+
+        log.info("PipleLine Exe Result:{}", JSONObject.toJSONString(stringRedisTemplate.executePipelined(sessionCallback)));
+        return coupons.size();
     }
 
     /**
