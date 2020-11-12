@@ -174,6 +174,7 @@ public class RedisServiceImpl implements IRedisService {
     private Integer addCouponToCacheForExpire(Long userId, List<Coupon> coupons) throws CouponException {
 
         // status 是Expired， 代表是已过期了
+        return null;
     }
 
     /**
