@@ -13,6 +13,7 @@ import com.imooc.coupon.service.IUserService;
 import com.imooc.coupon.vo.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -131,9 +132,59 @@ public class UserServiceImpl implements IUserService {
         return result;
     }
 
+    /**
+     * 1. 从templateClient 拿到对应的优惠券， 并检查是否过期
+     * 2. 根据limitation判断用户是否可以领取
+     * 3. save to db
+     * 4. 填充 couponTemplateSDK
+     * 5. save to cache
+     * @param request
+     * @return
+     * @throws CouponException
+     */
     @Override
     public Coupon acquireTemplate(AcquireTemplateRequest request) throws CouponException {
-        return null;
+        Map<Integer, CouponTemplateSDK> id2Template = templateClient.findId2TemplateSDK(
+                Collections.singletonList(request.getTemplateSDK().getId())
+        ).getData();
+
+        // 优惠券模板是需要存在的
+        if (id2Template.size() <= 0) {
+            log.error("can not acquire template from templateClient: {}, ", request.getTemplateSDK().getId());
+            throw new CouponException("can not acquire template from templateClient");
+        }
+
+        // 用户是否可以领取这张优惠券
+        List<Coupon> userUsableCoupons = findCouponsByStatus(request.getUserId(), CouponStatus.USABLE.getCode());
+
+        Map<Integer, List<Coupon>> templateId3Coupons = userUsableCoupons.stream().collect(Collectors.groupingBy(Coupon::getTemplateId));
+
+
+        if (templateId3Coupons.containsKey(request.getTemplateSDK().getId()) && templateId3Coupons.get(request.getTemplateSDK().getId())
+        .size() >= id2Template.get(request.getTemplateSDK().getId()).getRule().getLimitation()) {
+            log.error("Exceed Template Assign  Limitation:{}", request.getTemplateSDK().getId());
+            throw new CouponException("Exceed Template Assign  Limitation");
+        }
+
+        // 尝试去获取优惠券码
+        String couponCode = redisService.tryToAcquireCouponCodeFromCache(request.getTemplateSDK().getId());
+        if (StringUtils.isEmpty(couponCode)) {
+            log.error("can not acquire coupon code: {}", request.getTemplateSDK().getId());
+            throw new CouponException("can not acquire coupon code");
+        }
+
+        Coupon newCoupon = new Coupon(request.getTemplateSDK().getId(), request.getUserId(),
+                couponCode, CouponStatus.USABLE);
+
+        // save to db
+        newCoupon = couponDao.save(newCoupon);
+
+        // 填充coupon对象的CouponTemplateSDK, 一定嗷在放入缓存中之前去填充
+        newCoupon.setTemplateSDK(request.getTemplateSDK());
+
+        redisService.addCouponToCache(request.getUserId(), Collections.singletonList(newCoupon),
+                CouponStatus.USABLE.getCode());
+        return newCoupon;
     }
 
     @Override
