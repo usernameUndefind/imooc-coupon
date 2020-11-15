@@ -104,6 +104,7 @@ public class UserServiceImpl implements IUserService {
 
         log.info("find usable template count:{}", templateSDKS.size());
 
+
         // 将所有可用的优惠券模板转换为Map类型，key=模板id, value=pair key:模板领取上限次数, value:模板
         Map<Integer, Pair<Integer, CouponTemplateSDK>> limit2Template = new HashMap<>(templateSDKS.size());
         templateSDKS.forEach(t -> limit2Template.put(t.getId(), Pair.of(t.getRule().getLimitation(), t)));
