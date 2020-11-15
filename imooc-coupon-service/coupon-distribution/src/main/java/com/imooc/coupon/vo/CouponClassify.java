@@ -33,7 +33,7 @@ public class CouponClassify {
      * @param coupons
      * @return
      */
-    private static CouponClassify classify(List<Coupon> coupons) {
+    public static CouponClassify classify(List<Coupon> coupons) {
         List<Coupon> usable = new ArrayList<>(coupons.size());
         List<Coupon> used = new ArrayList<>(coupons.size());
         List<Coupon> expired = new ArrayList<>(coupons.size());
