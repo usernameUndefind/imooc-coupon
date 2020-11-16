@@ -13,13 +13,16 @@ import com.imooc.coupon.service.IUserService;
 import com.imooc.coupon.vo.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -187,8 +190,64 @@ public class UserServiceImpl implements IUserService {
         return newCoupon;
     }
 
+    /**
+     * 这里需要注意，规则相关处理需要由Settlement 系统去做， 当前系统仅仅做业务处理过程
+     *
+     * @param info
+     * @return
+     * @throws CouponException
+     */
     @Override
     public SettlementInfo settlement(SettlementInfo info) throws CouponException {
-        return null;
+        // 当没有传递优惠券时，直接返回商品总价
+        List<SettlementInfo.CouponAndTemplateInfo> ctInfos =
+                info.getCouponAndTemplateInfos();
+        if (CollectionUtils.isEmpty(ctInfos)) {
+            log.info("Empty Coupon for settle");
+            double goodsSum = 0.0;
+            for (GoodsInfo gi : info.getGoodsInfos()) {
+                goodsSum += gi.getPrice();
+            }
+            // 没有优惠券也就不存在优惠券的核销
+            info.setCost(retain2Decimals(goodsSum));
+        }
+
+        // 校验当前优惠券
+        // 获取当前用户自己的优惠券
+        List<Coupon> coupons = findCouponsByStatus(info.getUserId(), CouponStatus.USABLE.getCode());
+        Map<Integer, Coupon> id2Coupon = coupons.stream().collect(Collectors.toMap(Coupon::getId, Function.identity()));
+        if (MapUtils.isEmpty(id2Coupon) || !CollectionUtils.isSubCollection(
+                ctInfos.stream().map(SettlementInfo.CouponAndTemplateInfo::getId)
+                .collect(Collectors.toList()), id2Coupon.keySet())) {
+            log.info("{}", id2Coupon.keySet());
+            log.error("User Coupon has some problem , it is not subCollection of Coupons");
+            throw new CouponException("User Coupon has some problem , it is not subCollection of Coupons");
+        }
+
+        log.debug("Current Settlement Coupons is user's: {}", ctInfos.size());
+
+        List<Coupon> settleCoupons = new ArrayList<>(ctInfos.size());
+        ctInfos.forEach(ci -> settleCoupons.add(id2Coupon.get(ci.getId())));
+
+        SettlementInfo processedInfo = settlementClient.computeRule(info).getData();
+
+        if (processedInfo.getEmploy() && CollectionUtils.isNotEmpty(processedInfo.getCouponAndTemplateInfos())) {
+            log.info("Settle user coupon: {}, {}", info.getUserId(), JSON.toJSONString(settleCoupons));
+            // 更新缓存
+            redisService.addCouponToCache(info.getUserId(), settleCoupons, CouponStatus.USED.getCode());
+            kafkaTemplate.send(Constant.TOPIC, JSON.toJSONString(new CouponKafkaMessage(CouponStatus.USED.getCode()
+            , settleCoupons.stream().map(Coupon::getId).collect(Collectors.toList()))));
+        }
+        return processedInfo;
+    }
+
+    /**
+     * 保留两位小数
+     * @param value
+     * @return
+     */
+    private double retain2Decimals(double value) {
+        // 四舍五入
+        return new BigDecimal(value).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
     }
 }
