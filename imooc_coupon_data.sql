@@ -49,8 +49,6 @@ INSERT INTO `coupon_template` VALUES (10, 1, 0, '优惠券模板-1603809231926',
 
 SET FOREIGN_KEY_CHECKS = 1;
 
-
--- 创建 coupon 数据表
 CREATE TABLE IF NOT EXISTS `imooc_coupon_data`.`coupon` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '自增主键',
   `template_id` int(11) NOT NULL DEFAULT '0' COMMENT '关联优惠券模板的主键',
@@ -62,6 +60,8 @@ CREATE TABLE IF NOT EXISTS `imooc_coupon_data`.`coupon` (
   KEY `idx_template_id` (`template_id`),
   KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8 COMMENT='优惠券(用户领取的记录)';
+-- 创建 coupon 数据表
+
 
 -- 清空表数据
 -- truncate coupon;
