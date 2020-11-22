@@ -23,6 +23,10 @@ zuul:
       path: /coupon-distribution/**
       serviceId: eureka-client-coupon-distribution
       strip-prefix: false
+    settlement:
+      path: /coupon-settlement/**
+      serviceId: eureka-client-coupon-settlement
+      strip-prefix: false
   host:
     connect-timeout-millis: 15000
     socket-timeout-millis: 60000
