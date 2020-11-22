@@ -115,8 +115,8 @@ public class ManJianZheKouExecutor extends AbstractExecutor implements RuleExecu
         ));
 
         List<String> allSharedKeyForZheKou = new ArrayList<>();
-        allSharedKeyForManjian.add(zhekouKey);
-        allSharedKeyForManjian.addAll(JSON.parseObject(
+        allSharedKeyForZheKou.add(zhekouKey);
+        allSharedKeyForZheKou.addAll(JSON.parseObject(
                 zheKou.getTemplateSDK().getRule().getWeight(), List.class
         ));
 
