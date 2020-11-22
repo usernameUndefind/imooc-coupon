@@ -39,7 +39,7 @@ spring:
     timeout: 10000
   kafka:
     bootstrap-servers:
-      172.26.144.36:9092
+      kafka_server:9092
     consumer:
       group-id: imooc-coupon-x
       auto-offset-reset: latest

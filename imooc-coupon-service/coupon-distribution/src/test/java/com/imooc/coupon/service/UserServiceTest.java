@@ -27,6 +27,11 @@ public class UserServiceTest {
          System.out.println(JSON.toJSONString(userService.
                  findCouponsByStatus(fakeUserId, CouponStatus.USABLE.getCode())));
 
+     }
 
+
+     @Test
+     public void testFindAvailableTemplate() throws CouponException {
+          System.out.println(JSON.toJSONString(userService.findAvailableTemplate(fakeUserId)));
      }
 }
