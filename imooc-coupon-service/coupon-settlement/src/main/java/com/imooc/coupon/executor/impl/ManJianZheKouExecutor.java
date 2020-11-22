@@ -79,8 +79,7 @@ public class ManJianZheKouExecutor extends AbstractExecutor implements RuleExecu
 
 
         // 在计算折扣
-        double zheKouBase = (double) manJian.getTemplateSDK().getRule().getDiscount().getBase();
-        double zheKouQuota = (double) manJian.getTemplateSDK().getRule().getDiscount().getQuota();
+        double zheKouQuota = (double) zheKou.getTemplateSDK().getRule().getDiscount().getQuota();
 
         targetSum *= zheKouQuota * 1.0 / 100;
         ctInfos.add(zheKou);
