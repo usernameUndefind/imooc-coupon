@@ -9,40 +9,42 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * 折扣优惠券结算规则执行器
+ * 立减优惠券计算规则执行器
  */
 @Slf4j
 @Component
-public class ZheKouExecutor extends AbstractExecutor implements RuleExecutor {
+public class LiJianExecutor extends AbstractExecutor implements RuleExecutor {
 
 
     @Override
     public RuleFlag ruleConfig() {
-        return RuleFlag.ZHEKOU;
+        return RuleFlag.LIJIAN;
     }
 
     @Override
     public SettlementInfo computeRule(SettlementInfo settlementInfo) {
 
+        // 计算商品总价
         double goodsSum = retain2Decimals(goodsCostSum(settlementInfo.getGoodsInfos()));
+
         SettlementInfo probability = processGoodsTypeNotSatisfy(settlementInfo, goodsSum);
 
         if (null != probability) {
-            log.debug("ZheKou template is not match goodstype");
+            log.debug("ManJian Template Is Not Match To GoodsType!");
             return probability;
         }
 
-        // 折扣优惠券可以直接使用， 没有门槛
-        CouponTemplateSDK templateSDK = settlementInfo.getCouponAndTemplateInfos().get(0).getTemplateSDK();
-
+        // 判断满减是否符合折扣标准
+        CouponTemplateSDK templateSDK  = settlementInfo.getCouponAndTemplateInfos().get(0).getTemplateSDK();
         double quota = (double) templateSDK.getRule().getDiscount().getQuota();
+
 
         // 计算使用优惠券之后的价格
         settlementInfo.setCost(
-                retain2Decimals(Math.max((goodsSum * (quota * 1.0 / 100)), minCost()))
+                retain2Decimals(Math.max((goodsSum - quota), minCost()))
         );
 
-        log.debug("use zhekou coupon make goods cost from {} to {}", goodsSum, settlementInfo.getCost());
+        log.debug("use lijian coupon make goods cost from {} to {}", goodsSum, settlementInfo.getCost());
         return settlementInfo;
     }
 }

@@ -53,7 +53,7 @@ public class ManJianExecutor extends AbstractExecutor implements RuleExecutor {
 
         // 计算使用优惠券之后的价格
         settlementInfo.setCost(retain2Decimals(
-                (goodsSum - quota) > minCost() ? (goodsSum - quota) : minCost()
+                Math.max((goodsSum - quota), minCost())
         ));
 
         log.debug("use manjian coupon make goods cost from {} to {}", goodsSum, settlementInfo.getCost());
