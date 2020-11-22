@@ -90,7 +90,7 @@ public class ExecuteManager implements BeanPostProcessor {
         RuleExecutor executor = (RuleExecutor) bean;
         RuleFlag ruleFlag = executor.ruleConfig();
         if (executorIndex.containsKey(ruleFlag)) {
-            throw new IllegalStateException("there is already an executor for rule flag "+ ruleFlag);
+            throw new IllegalStateException("there is already an executor for rule flag " + ruleFlag);
         }
 
         log.info("load executor{} for rule flag {}", executor.getClass(), ruleFlag);
