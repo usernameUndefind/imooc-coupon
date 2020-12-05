@@ -14,10 +14,7 @@
     <modules>
         <module>coupon-eureka</module>
         <module>coupon-gateway</module>
-        <module>coupon-common</module>
-        <module>coupon-template</module>
-        <module>coupon-template</module>
-        <module>coupon-distribution</module>
+        <module>imooc-coupon-service</module>
     </modules>
 
     <parent>
