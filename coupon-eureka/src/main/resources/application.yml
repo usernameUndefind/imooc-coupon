@@ -8,9 +8,7 @@ eureka:
   instance:
     hostname: service1
   client:
-    # 是否从eureka server 获取注册信息
     fetch-registry: false
-    # 是否将自己注册到Eureka server， 默认是true
     register-with-eureka: false
     service-url:
       defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/

@@ -5,10 +5,12 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.imooc.coupon.entity.CouponTemplate;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 
+@Slf4j
 public class CouponTemplateSerialize extends JsonSerializer<CouponTemplate> {
 
     @Override
@@ -25,7 +27,8 @@ public class CouponTemplateSerialize extends JsonSerializer<CouponTemplate> {
         jsonGenerator.writeStringField("count", couponTemplate.getCount().toString());
         jsonGenerator.writeStringField("createTime", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(couponTemplate.getCreateTime()));
         jsonGenerator.writeStringField("userId", couponTemplate.getUserId().toString());
-        jsonGenerator.writeStringField("key", couponTemplate.getKey() + String.format("%04", couponTemplate.getId()));
+
+        jsonGenerator.writeStringField("key", couponTemplate.getKey() +  couponTemplate.getId());
         jsonGenerator.writeStringField("target", couponTemplate.getTarget().getDescription());
         jsonGenerator.writeStringField("rule", JSON.toJSONString(couponTemplate.getRule()));
 
