@@ -9,6 +9,7 @@
         <module>coupon-settlement</module>
         <module>coupon-permission-sdk</module>
         <module>coupon-permission-service</module>
+        <module>coupon-permission-detector</module>
     </modules>
     <parent>
         <artifactId>imooc-coupon</artifactId>
